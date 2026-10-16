@@ -210,7 +210,7 @@ ll_app2 <- function(log_parms, x) {
 # ==============================================================================
 ui <- page_navbar(
   theme = app_theme,
-  title = span(icon("layer-group"), " Combined Pareto Scale-Inflated Suite"),
+  title = NULL,
   id = "nav",
   fillable = FALSE,
   
@@ -233,6 +233,15 @@ ui <- page_navbar(
       }
       .compact-card {
         margin-bottom: 8px !important;
+      }
+      /* Center main navbar tab headings */
+      .navbar-nav {
+        justify-content: center !important;
+        width: 100% !important;
+      }
+      /* Center nested tabsetPanel headings */
+      .nav-tabs {
+        justify-content: center !important;
       }
     "))
   ),
@@ -320,7 +329,7 @@ ui <- page_navbar(
   ),
   
   # --------------------------------------------------------------------------
-  # TAB 2: METHODOLOGY (MOVED TO 2ND POSITION)
+  # TAB 2: METHODOLOGY
   # --------------------------------------------------------------------------
   nav_panel(
     title = "Methodology",
@@ -525,7 +534,7 @@ ui <- page_navbar(
   # TAB 4: MODEL 1 RESULTS
   # --------------------------------------------------------------------------
   nav_panel(
-    title = "Model 1 (With Outliers)",
+    title = "Model (With Outliers)",
     icon = icon("chart-line"),
     
     div(style = "margin-bottom: 10px;", uiOutput("m1_metrics_ui")),
@@ -614,7 +623,7 @@ ui <- page_navbar(
   # TAB 7: INDEPENDENT MCEM ANALYSIS MODULE
   # --------------------------------------------------------------------------
   nav_panel(
-    title = "App 2: MCEM Outlier Analysis",
+    title = " MCEM Outlier Analysis",
     icon = icon("calculator"),
     
     div(
@@ -659,10 +668,6 @@ ui <- page_navbar(
         mainPanel(
           width = 9,
           tabsetPanel(
-            tabPanel("Posterior Distributions", 
-                     plotOutput("app2_plot_histograms", height = "650px")),
-            tabPanel("Outlier Probability Plot", 
-                     plotOutput("app2_plot_outliers", height = "500px")),
             tabPanel("Summary & Hyperparameters", 
                      tags$br(),
                      wellPanel(
@@ -676,6 +681,10 @@ ui <- page_navbar(
                        tableOutput("app2_hyperparameters_table")
                      )
             ),
+            tabPanel("Posterior Distributions", 
+                     plotOutput("app2_plot_histograms", height = "650px")),
+            tabPanel("Outlier Probability Plot", 
+                     plotOutput("app2_plot_outliers", height = "500px")),
             tabPanel("Observations & Posterior Probabilities", 
                      DTOutput("app2_data_table"))
           )
