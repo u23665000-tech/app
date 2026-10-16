@@ -6,7 +6,6 @@ library(ggplot2)
 library(extraDistr)
 library(DT)
 library(jsonlite)
-library(rsconnect)
 
 options(scipen = 999)
 
