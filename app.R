@@ -42,7 +42,7 @@ app_theme <- bs_theme(
   success = "#2a9d8f",    # Muted Teal
   warning = "#e9c46a",    # Amber
   danger = "#e63946",     # Crimson
-  base_font = "Inter, sans-serif" # FIXED: Replaced font_google to prevent server connection hang
+  base_font = "Inter, sans-serif"
 )
 
 # Custom Helper Functions for App 1 (Pareto Simulation)
@@ -215,7 +215,6 @@ ui <- page_navbar(
   fillable = FALSE,
   
   header = tags$head(
-    # FIXED: Load Google Font via client-side link tag
     tags$link(
       rel = "stylesheet", 
       href = "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
@@ -239,7 +238,7 @@ ui <- page_navbar(
   ),
   
   # --------------------------------------------------------------------------
-  # APP 1 - TAB 1: COVER PAGE (STREAMLINED)
+  # TAB 1: COVER PAGE
   # --------------------------------------------------------------------------
   nav_panel(
     title = "Cover Page",
@@ -321,7 +320,94 @@ ui <- page_navbar(
   ),
   
   # --------------------------------------------------------------------------
-  # APP 1 - TAB 2: DATA & MCMC CONTROL
+  # TAB 2: METHODOLOGY (MOVED TO 2ND POSITION)
+  # --------------------------------------------------------------------------
+  nav_panel(
+    title = "Methodology",
+    icon = icon("graduation-cap"),
+    
+    withMathJax(),
+    
+    layout_columns(
+      col_widths = c(6, 6, 12),
+      
+      # CARD 1: MODEL SPECIFICATION
+      card(
+        card_header(class = "bg-primary text-white", h6(icon("square-root-variable"), " 1. Scale-Inflated Pareto Mixture", style = "margin:0;")),
+        card_body(
+          style = "font-size: 0.9rem;",
+          p("The model separates bulk observations from extreme scale-inflated contamination via a two-component mixture:"),
+          p("$$f(x_i | \\alpha, \\theta, \\beta, \\epsilon) = (1 - \\epsilon) \\frac{\\alpha \\theta^\\alpha}{x_i^{\\alpha+1}} I(x_i \\ge \\theta) + \\epsilon \\frac{\\alpha (\\beta \\theta)^\\alpha}{x_i^{\\alpha+1}} I(x_i \\ge \\beta \\theta)$$"),
+          p("Introducing a latent Bernoulli outlier indicator \\(\\delta_i \\sim \\text{Bernoulli}(\\epsilon)\\) yields the compact scale-inflated form:"),
+          p("$$f(x_i | \\alpha, \\theta, \\beta, \\epsilon, \\delta_i) = \\frac{\\alpha (\\beta^{\\delta_i} \\theta)^\\alpha}{x_i^{\\alpha+1}} I\\left(x_i \\ge \\beta^{\\delta_i} \\theta\\right)$$")
+        )
+      ),
+      
+      # CARD 2: PRIORS & GIBBS SAMPLER
+      card(
+        card_header(class = "bg-primary text-white", h6(icon("diagram-project"), " 2. Priors & Full Conditional Posteriors", style = "margin:0;")),
+        card_body(
+          style = "padding: 10px; font-size: 0.85rem;",
+          tags$table(
+            class = "table table-sm table-striped align-middle",
+            style = "margin-bottom: 0;",
+            tags$thead(
+              class = "table-light",
+              tags$tr(
+                tags$th(style = "width: 22%; font-weight: 600;", "Parameter"),
+                tags$th(style = "width: 33%; font-weight: 600;", "Prior Distribution"),
+                tags$th(style = "width: 45%; font-weight: 600;", "Full Conditional Posterior")
+              )
+            ),
+            tags$tbody(
+              tags$tr(
+                tags$td(strong("Shape (\\(\\alpha\\))")),
+                tags$td("\\(\\alpha \\sim \\text{Gamma}(a_1, a_2)\\)"),
+                tags$td("\\(\\text{Gamma}\\left(a_1 + n, a_2 + \\sum_{i=1}^n \\ln x_i - n \\ln \\theta - k \\ln \\beta\\right)\\)")
+              ),
+              tags$tr(
+                tags$td(strong("Threshold (\\(\\theta\\))")),
+                tags$td("\\(\\theta \\sim \\text{Gamma}(t_1, t_2)\\)"),
+                tags$td("Truncated \\(\\text{Gamma}(t_1 + \\alpha n, t_2)\\) on \\(0 \\le \\theta \\le \\min_i \\left(\\frac{x_i}{\\beta^{\\delta_i}}\\right)\\)")
+              ),
+              tags$tr(
+                tags$td(strong("Contamination (\\(\\epsilon\\))")),
+                tags$td("\\(\\epsilon \\sim \\text{Beta}(b_1, b_2)\\)"),
+                tags$td("\\(\\text{Beta}(b_1 + k, b_2 + n - k)\\)")
+              ),
+              tags$tr(
+                tags$td(strong("Inflation (\\(\\beta\\))")),
+                tags$td("\\(\\beta \\sim \\text{Shifted-Exp}(\\beta^*, \\lambda)\\)"),
+                tags$td("Truncated \\(\\text{Gamma}(\\alpha k + 1, \\lambda)\\) on \\(\\beta^* \\le \\beta \\le \\min_{i: \\delta_i=1}\\left(\\frac{x_i}{\\theta}\\right)\\)")
+              ),
+              tags$tr(
+                tags$td(strong("Indicator (\\(\\delta_i\\))")),
+                tags$td("\\(\\delta_i | \\epsilon \\sim \\text{Bernoulli}(\\epsilon)\\)"),
+                tags$td("\\(P(\\delta_i = 1) = \\frac{\\beta^\\alpha \\epsilon}{1 - \\epsilon + \\beta^\\alpha \\epsilon}\\) for \\(x_i \\ge \\beta \\theta\\); \\(0\\) for \\(\\theta \\le x_i < \\beta \\theta\\)")
+              )
+            )
+          )
+        )
+      ),
+      
+      # CARD 3: EMPIRICAL BAYES & DENSITY ESTIMATION
+      card(
+        card_header(class = "bg-primary text-white", h6(icon("gears"), " 3. Empirical Bayes (MCEM) & Diagnostics", style = "margin:0;")),
+        card_body(
+          style = "font-size: 0.88rem;",
+          p(strong("Monte Carlo Expectation-Maximisation (MCEM):")),
+          p("When prior parameters are unknown, Empirical Bayes tuning alternates between an ", strong("E-step"), " (sampling via Gibbs draws) and an ", strong("M-step"), " (updating hyperparameters \\(a_1, a_2, b^*, \\lambda, b_1, b_2, t_1, t_2\\) until convergence)."),
+          hr(style = "margin: 8px 0;"),
+          p(strong("Rao-Blackwellised Density Estimator:")),
+          p("Reduces sampling variance by averaging conditional posterior distributions over MCMC draws \\(R\\):"),
+          p("$$\\hat{f}_{\\text{RB}}(\\alpha) = \\frac{1}{R}\\sum_{r=1}^R \\text{Gamma}\\left(\\alpha; a_1 + n, a_2 + \\sum \\ln x_i - n\\ln \\theta^{(r)} - k^{(r)}\\ln \\beta^{(r)}\\right)$$")
+        )
+      )
+    )
+  ),
+  
+  # --------------------------------------------------------------------------
+  # TAB 3: DATA & MCMC CONTROL
   # --------------------------------------------------------------------------
   nav_panel(
     title = "Data & Setup",
@@ -436,7 +522,7 @@ ui <- page_navbar(
   ),
   
   # --------------------------------------------------------------------------
-  # APP 1 - TAB 3: MODEL 1 RESULTS
+  # TAB 4: MODEL 1 RESULTS
   # --------------------------------------------------------------------------
   nav_panel(
     title = "Model 1 (With Outliers)",
@@ -458,7 +544,7 @@ ui <- page_navbar(
   ),
   
   # --------------------------------------------------------------------------
-  # APP 1 - TAB 4: KS TEST EVALUATION
+  # TAB 5: KS TEST EVALUATION
   # --------------------------------------------------------------------------
   nav_panel(
     title = "KS Test Evaluation",
@@ -483,7 +569,7 @@ ui <- page_navbar(
   ),
   
   # --------------------------------------------------------------------------
-  # APP 1 - TAB 5: COMPARATIVE ANALYSIS
+  # TAB 6: COMPARATIVE ANALYSIS
   # --------------------------------------------------------------------------
   nav_panel(
     title = "Outliers vs. No Outliers",
@@ -525,7 +611,7 @@ ui <- page_navbar(
   ),
   
   # --------------------------------------------------------------------------
-  # APP 2 - INDEPENDENT MCEM ANALYSIS MODULE
+  # TAB 7: INDEPENDENT MCEM ANALYSIS MODULE
   # --------------------------------------------------------------------------
   nav_panel(
     title = "App 2: MCEM Outlier Analysis",
@@ -596,93 +682,6 @@ ui <- page_navbar(
         )
       )
     )
-  ),
-  
-  # --------------------------------------------------------------------------
-  # METHODOLOGY (2 CARDS TOP, 1 CARD BOTTOM)
-  # --------------------------------------------------------------------------
-  nav_panel(
-    title = "Methodology",
-    icon = icon("graduation-cap"),
-    
-    withMathJax(),
-    
-    layout_columns(
-      col_widths = c(6, 6, 12),
-      
-      # CARD 1: MODEL SPECIFICATION
-      card(
-        card_header(class = "bg-primary text-white", h6(icon("square-root-variable"), " 1. Scale-Inflated Pareto Mixture", style = "margin:0;")),
-        card_body(
-          style = "font-size: 0.9rem;",
-          p("The model separates bulk observations from extreme scale-inflated contamination via a two-component mixture:"),
-          p("$$f(x_i | \\alpha, \\theta, \\beta, \\epsilon) = (1 - \\epsilon) \\frac{\\alpha \\theta^\\alpha}{x_i^{\\alpha+1}} I(x_i \\ge \\theta) + \\epsilon \\frac{\\alpha (\\beta \\theta)^\\alpha}{x_i^{\\alpha+1}} I(x_i \\ge \\beta \\theta)$$"),
-          p("Introducing a latent Bernoulli outlier indicator \\(\\delta_i \\sim \\text{Bernoulli}(\\epsilon)\\) yields the compact scale-inflated form:"),
-          p("$$f(x_i | \\alpha, \\theta, \\beta, \\epsilon, \\delta_i) = \\frac{\\alpha (\\beta^{\\delta_i} \\theta)^\\alpha}{x_i^{\\alpha+1}} I\\left(x_i \\ge \\beta^{\\delta_i} \\theta\\right)$$")
-        )
-      ),
-      
-      # CARD 2: PRIORS & GIBBS SAMPLER (MATCHING SECTIONS 2.1 & 2.2)
-      card(
-        card_header(class = "bg-primary text-white", h6(icon("diagram-project"), " 2. Priors & Full Conditional Posteriors", style = "margin:0;")),
-        card_body(
-          style = "padding: 10px; font-size: 0.85rem;",
-          tags$table(
-            class = "table table-sm table-striped align-middle",
-            style = "margin-bottom: 0;",
-            tags$thead(
-              class = "table-light",
-              tags$tr(
-                tags$th(style = "width: 22%; font-weight: 600;", "Parameter"),
-                tags$th(style = "width: 33%; font-weight: 600;", "Prior Distribution"),
-                tags$th(style = "width: 45%; font-weight: 600;", "Full Conditional Posterior")
-              )
-            ),
-            tags$tbody(
-              tags$tr(
-                tags$td(strong("Shape (\\(\\alpha\\))")),
-                tags$td("\\(\\alpha \\sim \\text{Gamma}(a_1, a_2)\\)"),
-                tags$td("\\(\\text{Gamma}\\left(a_1 + n, a_2 + \\sum_{i=1}^n \\ln x_i - n \\ln \\theta - k \\ln \\beta\\right)\\)")
-              ),
-              tags$tr(
-                tags$td(strong("Threshold (\\(\\theta\\))")),
-                tags$td("\\(\\theta \\sim \\text{Gamma}(t_1, t_2)\\)"),
-                tags$td("Truncated \\(\\text{Gamma}(t_1 + \\alpha n, t_2)\\) on \\(0 \\le \\theta \\le \\min_i \\left(\\frac{x_i}{\\beta^{\\delta_i}}\\right)\\)")
-              ),
-              tags$tr(
-                tags$td(strong("Contamination (\\(\\epsilon\\))")),
-                tags$td("\\(\\epsilon \\sim \\text{Beta}(b_1, b_2)\\)"),
-                tags$td("\\(\\text{Beta}(b_1 + k, b_2 + n - k)\\)")
-              ),
-              tags$tr(
-                tags$td(strong("Inflation (\\(\\beta\\))")),
-                tags$td("\\(\\beta \\sim \\text{Shifted-Exp}(\\beta^*, \\lambda)\\)"),
-                tags$td("Truncated \\(\\text{Gamma}(\\alpha k + 1, \\lambda)\\) on \\(\\beta^* \\le \\beta \\le \\min_{i: \\delta_i=1}\\left(\\frac{x_i}{\\theta}\\right)\\)")
-              ),
-              tags$tr(
-                tags$td(strong("Indicator (\\(\\delta_i\\))")),
-                tags$td("\\(\\delta_i | \\epsilon \\sim \\text{Bernoulli}(\\epsilon)\\)"),
-                tags$td("\\(P(\\delta_i = 1) = \\frac{\\beta^\\alpha \\epsilon}{1 - \\epsilon + \\beta^\\alpha \\epsilon}\\) for \\(x_i \\ge \\beta \\theta\\); \\(0\\) for \\(\\theta \\le x_i < \\beta \\theta\\)")
-              )
-            )
-          )
-        )
-      ),
-      
-      # CARD 3: EMPIRICAL BAYES & DENSITY ESTIMATION (BOTTOM FULL-WIDTH)
-      card(
-        card_header(class = "bg-primary text-white", h6(icon("gears"), " 3. Empirical Bayes (MCEM) & Diagnostics", style = "margin:0;")),
-        card_body(
-          style = "font-size: 0.88rem;",
-          p(strong("Monte Carlo Expectation-Maximisation (MCEM):")),
-          p("When prior parameters are unknown, Empirical Bayes tuning alternates between an ", strong("E-step"), " (sampling via Gibbs draws) and an ", strong("M-step"), " (updating hyperparameters \\(a_1, a_2, b^*, \\lambda, b_1, b_2, t_1, t_2\\) until convergence)."),
-          hr(style = "margin: 8px 0;"),
-          p(strong("Rao-Blackwellised Density Estimator:")),
-          p("Reduces sampling variance by averaging conditional posterior distributions over MCMC draws \\(R\\):"),
-          p("$$\\hat{f}_{\\text{RB}}(\\alpha) = \\frac{1}{R}\\sum_{r=1}^R \\text{Gamma}\\left(\\alpha; a_1 + n, a_2 + \\sum \\ln x_i - n\\ln \\theta^{(r)} - k^{(r)}\\ln \\beta^{(r)}\\right)$$")
-        )
-      )
-    )
   )
 )
 
@@ -695,11 +694,9 @@ server <- function(input, output, session) {
   # SERVER LOGIC - APP 1
   # --------------------------------------------------------------------------
   
-  # Reactive storage for active dataset initialized with Norwegian Oil dataset
   active_dataset <- reactiveVal(norwegian_oil_data)
   sim_seed <- reactiveVal(123)
   
-  # Observe simulation generation or dataset selection
   observeEvent(c(input$gen_sim, input$data_source), {
     if (input$data_source == "simulated") {
       set.seed(sim_seed())
@@ -717,7 +714,6 @@ server <- function(input, output, session) {
     }
   }, ignoreInit = FALSE)
   
-  # Observe file upload
   observeEvent(input$file, {
     req(input$file)
     df <- read_excel(input$file$datapath, progress = FALSE)
@@ -907,7 +903,6 @@ server <- function(input, output, session) {
     rb_theta_density <- NULL
     
     if (use_rb) {
-      # Rao-Blackwellized Alpha Density
       alpha_grid <- seq(min(alphas) * 0.8, max(alphas) * 1.2, length.out = 300)
       rb_alpha_density <- numeric(length(alpha_grid))
       for (r in 1:num_samples) {
@@ -917,7 +912,6 @@ server <- function(input, output, session) {
         rb_alpha_density <- rb_alpha_density + dgamma(alpha_grid, shape = shape_r, rate = rate_r) / num_samples
       }
       
-      # Rao-Blackwellized Theta Density
       if (!fix_theta) {
         t_min <- min(thetas)
         t_max <- max(thetas)
