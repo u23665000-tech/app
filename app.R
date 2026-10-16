@@ -43,7 +43,7 @@ app_theme <- bs_theme(
   success = "#2a9d8f",    # Muted Teal
   warning = "#e9c46a",    # Amber
   danger = "#e63946",     # Crimson
-  base_font = font_google("Inter")
+  base_font = "Inter, sans-serif" # FIXED: Replaced font_google to prevent server connection hang
 )
 
 # Custom Helper Functions for App 1 (Pareto Simulation)
@@ -216,6 +216,11 @@ ui <- page_navbar(
   fillable = FALSE,
   
   header = tags$head(
+    # FIXED: Load Google Font via client-side link tag
+    tags$link(
+      rel = "stylesheet", 
+      href = "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+    ),
     tags$style(HTML("
       .sidebar .card, .sidebar .card-body {
         overflow: visible !important;
