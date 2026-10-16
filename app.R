@@ -5,8 +5,32 @@ library(readxl)
 library(ggplot2)
 library(extraDistr)
 library(DT)
+library(jsonlite)
+library(rsconnect)
 
 options(scipen = 999)
+
+# ==============================================================================
+# Norwegian Oil Extraction Dataset (n = 128)
+# ==============================================================================
+norwegian_oil_data <- c(
+  5409000, 9560000, 16228000, 8177000, 30065000, 27990000, 27990000, 36984000,
+  47299000, 15662000, 15662000, 20190000, 34908000, 4843000, 7674000, 1069000,
+  755000, 58684000, 41072000, 39752000, 314000, 9749000, 9749000, 2076000,
+  72333000, 41890000, 172089000, 23775000, 9623000, 9623000, 189000, 9120000,
+  10693000, 190204000, 52834000, 5661000, 5472000, 90259000, 190895000, 174165000,
+  2264000, 36166000, 63338000, 63338000, 126000, 12580000, 7862000, 12768000,
+  2076000, 75163000, 99064000, 60822000, 32896000, 81453000, 25851000, 314000,
+  15850000, 15976000, 188694000, 29877000, 184480000, 6227000, 38494000, 559792000,
+  21826000, 12831000, 2893000, 65540000, 22769000, 189000, 2579000, 1195000,
+  128249000, 31763000, 7296000, 46796000, 2705000, 2264000, 2264000, 49249000,
+  3900000, 54533000, 41000000, 9498000, 1887000, 22958000, 4780000, 3900000,
+  45916000, 189000, 8177000, 481862000, 69125000, 23398000, 27864000, 19247000,
+  22580000, 16542000, 2327000, 47991000, 47991000, 1447000, 45287000, 39940000,
+  27298000, 12517000, 18178000, 503000, 189000, 12014000, 28304000, 6101000,
+  6353000, 755000, 1006000, 200204000, 15410000, 29562000, 29562000, 47111000,
+  6667000, 19184000, 692000, 4214000, 4088000, 410409000, 451545000, 39500000
+)
 
 # ==============================================================================
 # Document 1 Theme & Custom Styling
@@ -211,52 +235,81 @@ ui <- page_navbar(
   ),
   
   # --------------------------------------------------------------------------
-  # APP 1 - TAB 1: COVER PAGE
+  # APP 1 - TAB 1: COVER PAGE (STREAMLINED)
   # --------------------------------------------------------------------------
   nav_panel(
     title = "Cover Page",
     icon = icon("home"),
     
     fluidRow(
-      column(12,
+      column(10, offset = 1,
              div(
-               style = "background-color: #ffffff; border: 1px solid #e2e8f0; border-left: 8px solid #002855; border-radius: 10px; padding: 35px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-top: 10px; margin-bottom: 25px;",
+               style = "background-color: #ffffff; border: 1px solid #e2e8f0; border-left: 8px solid #002855; border-radius: 10px; padding: 30px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-top: 15px; margin-bottom: 25px;",
                
-               h1("Considering the Effect of Prior Assumptions on the Pareto Scale Inflated Outlier Model and the Importance of Identifying Outliers", 
-                  style = "color: #002855; font-weight: 700; font-size: 2.1rem; line-height: 1.3; margin-bottom: 20px;"),
+               h2("Identifying Outliers in the Norwegian Oil Dataset", 
+                  style = "color: #002855; font-weight: 700; margin-bottom: 5px;"),
+               h5("A Bayesian Pareto Scale-Inflated Mixture Framework", 
+                  style = "color: #41748d; font-weight: 500; margin-bottom: 20px;"),
                
-               hr(style = "border-top: 2px solid #e2e8f0; margin-top: 15px; margin-bottom: 25px;"),
+               hr(style = "border-top: 1px solid #e2e8f0; margin: 15px 0;"),
                
                div(
-                 style = "font-size: 1.05rem; line-height: 1.8; color: #2c3e50; margin-bottom: 25px;",
-                 p(strong("Author: ", style = "color: #002855;"), "Manfred Tristan Spiwak (u23665000)"),
-                 p(strong("Degree: ", style = "color: #002855;"), "BSc(Hons) Mathematical Statistics"),
-                 p(strong("Module: ", style = "color: #002855;"), "WST 795 Research Report"),
-                 p(strong("Supervisor(s): ", style = "color: #002855;"), "Dr A Otto, Prof A Bekker & J Pillay"),
-                 p(strong("Institution: ", style = "color: #002855;"), "Department of Statistics, University of Pretoria")
+                 style = "font-size: 0.95rem; line-height: 1.6; color: #2c3e50; margin-bottom: 20px;",
+                 fluidRow(
+                   column(6, 
+                          p(strong("Author: "), "Manfred Tristan Spiwak (u23665000)"),
+                          p(strong("Degree: "), "BSc (Hons) Mathematical Statistics")
+                   ),
+                   column(6, 
+                          p(strong("Supervisors: "), "Dr A Otto, Prof A Bekker & J Pillay"),
+                          p(strong("Institution: "), "Department of Statistics, University of Pretoria")
+                   )
+                 )
                ),
                
-               hr(style = "border-top: 1px solid #e2e8f0; margin-top: 20px; margin-bottom: 25px;"),
-               
-               h3("Executive Summary", style = "color: #002855; font-weight: 600; margin-bottom: 15px;"),
-               withMathJax(
-                 p("This study investigates a Bayesian Pareto scale-inflated outlier model executed via Gibbs sampling to overcome 
-                    the inference challenges posed by extreme observations in heavy-tailed distributions. By utilizing latent indicators 
-                    and tuning hyperparameters with Monte Carlo Expectation-Maximization (MCEM) to establish Empirical Bayes priors, the Bayesian 
-                    framework effectively isolates scale-inflated contamination from standard tail behavior. Evaluated across two simulation studies and an empirical 
-                    application to Norwegian oil extraction data, the scale-inflated mixture approach successfully shifts posterior density for the tail shape parameter 
-                    toward true values, underscoring the effectiveness and robustness of Bayesian MCMC techniques when analyzing contaminated heavy-tailed data.")
+               div(
+                 style = "background-color: #f8fafc; padding: 15px 20px; border-radius: 8px; border: 1px solid #cbd5e1; margin-bottom: 25px;",
+                 p(style = "margin: 0; font-size: 1rem; color: #1e293b; line-height: 1.6;",
+                   strong("Overview: "), 
+                   "This application provides an interactive suite for fitting and validating Bayesian Pareto scale-inflated mixture models. Designed to isolate extreme data contamination from heavy-tailed distributions, it leverages Gibbs sampling and Empirical Bayes (MCEM) hyperparameter tuning to deliver robust parameter estimates.")
                ),
-               br(),
                
-               h3("Core Features of this Application", style = "color: #002855; font-weight: 600; margin-bottom: 15px;"),
-               tags$ul(
-                 style = "font-size: 1rem; color: #334155; line-height: 1.8; padding-left: 20px;",
-                 tags$li(strong("Flexible Data Strategy:", style = "color: #002855;"), " Generate synthetic scale-inflated Pareto data or upload custom Excel files."),
-                 tags$li(strong("Configurable MCMC Schemes:", style = "color: #002855;"), " Toggle between R x S parallel chains and standard continuous single-chain sampling with burn-in."),
-                 tags$li(strong("Exact Analytical Probabilities:", style = "color: #002855;"), " Evaluates exact conditional outlier probabilities plotted directly against observation values."),
-                 tags$li(strong("Posterior Diagnostics:", style = "color: #002855;"), " Renders optional Rao-Blackwellized mixture densities or empirical kernel densities for \\(\\alpha\\) and \\(\\theta\\), parameter traces, and ACF chain convergence plots."),
-                 tags$li(strong("Dual Shift Comparative Analysis:", style = "color: #002855;"), " Evaluates tail shape (\\(\\alpha\\)) and threshold (\\(\\theta\\)) parameter shifts between outlier-adjusted and standard Pareto models.")
+               h4("Key Capabilities", style = "color: #002855; font-weight: 600; margin-bottom: 15px;"),
+               
+               layout_columns(
+                 col_widths = c(6, 6, 6, 6),
+                 card(
+                   style = "border: 1px solid #e2e8f0; box-shadow: none;",
+                   card_body(
+                     style = "padding: 12px;",
+                     h6(icon("database", class = "text-primary"), " Flexible Data Input", style = "font-weight: bold; margin-bottom: 5px;"),
+                     p(style = "font-size: 0.85rem; color: #475569; margin: 0;", "Analyse the built-in 2023 Norwegian Oil dataset, generate synthetic scale-inflated samples, or upload custom Excel/CSV files.")
+                   )
+                 ),
+                 card(
+                   style = "border: 1px solid #e2e8f0; box-shadow: none;",
+                   card_body(
+                     style = "padding: 12px;",
+                     h6(icon("gears", class = "text-primary"), " MCMC & MCEM Engines", style = "font-weight: bold; margin-bottom: 5px;"),
+                     p(style = "font-size: 0.85rem; color: #475569; margin: 0;", "Run parallel or continuous Gibbs chains paired with Monte Carlo EM for Empirical Bayes prior estimation.")
+                   )
+                 ),
+                 card(
+                   style = "border: 1px solid #e2e8f0; box-shadow: none;",
+                   card_body(
+                     style = "padding: 12px;",
+                     h6(icon("chart-line", class = "text-primary"), " Model Validation", style = "font-weight: bold; margin-bottom: 5px;"),
+                     p(style = "font-size: 0.85rem; color: #475569; margin: 0;", "Evaluate model fidelity using Kolmogorov-Smirnov (KS) test statistics and empirical vs. predictive cumulative distribution plots.")
+                   )
+                 ),
+                 card(
+                   style = "border: 1px solid #e2e8f0; box-shadow: none;",
+                   card_body(
+                     style = "padding: 12px;",
+                     h6(icon("bullseye", class = "text-primary"), " Outlier Profiling", style = "font-weight: bold; margin-bottom: 5px;"),
+                     p(style = "font-size: 0.85rem; color: #475569; margin: 0;", "Isolate contaminated points probabilistically with posterior outlier classifications (\\(P(\\delta_i = 1)\\)) and interactive tables.")
+                   )
+                 )
                )
              )
       )
@@ -282,7 +335,8 @@ ui <- page_navbar(
           card_body(
             style = "padding: 8px;",
             selectInput("data_source", "Select Data Source:",
-                        choices = c("Simulated Pareto Data" = "simulated",
+                        choices = c("Norwegian Oil Dataset" = "norwegian",
+                                    "Simulated Pareto Data" = "simulated",
                                     "Upload Excel File (.xlsx)" = "upload")),
             
             conditionalPanel(
@@ -482,7 +536,9 @@ ui <- page_navbar(
         sidebarPanel(
           width = 3,
           selectInput("app2_data_source", "Data Input Source", 
-                      choices = c("Simulated Pareto Mixture", "Upload Dataset (.xlsx / .csv)")),
+                      choices = c("Norwegian Oil Dataset", 
+                                  "Simulated Pareto Mixture", 
+                                  "Upload Dataset (.xlsx / .csv)")),
           
           conditionalPanel(
             condition = "input.app2_data_source == 'Simulated Pareto Mixture'",
@@ -539,69 +595,88 @@ ui <- page_navbar(
   ),
   
   # --------------------------------------------------------------------------
-  # METHODOLOGY
+  # METHODOLOGY (2 CARDS TOP, 1 CARD BOTTOM)
   # --------------------------------------------------------------------------
   nav_panel(
     title = "Methodology",
     icon = icon("graduation-cap"),
     
-    card(
-      card_header(class = "bg-primary text-white", h3("Methodology & Mathematical Derivations", style = "margin:0;")),
-      card_body(
-        withMathJax(),
-        
-        h4("1. The Scale-Inflated Pareto Mixture Model", style = "color: #002855; font-weight:600;"),
-        p("The density of the scale-inflated outlier model combines a standard Pareto distribution for bulk data and an inflated Pareto component for extremes:"),
-        p("$$f(x_i | \\alpha, \\theta, \\beta, \\epsilon) = (1 - \\epsilon) \\frac{\\alpha \\theta^\\alpha}{x_i^{\\alpha+1}} I(x_i \\ge \\theta) + \\epsilon \\frac{\\alpha (\\beta \\theta)^\\alpha}{x_i^{\\alpha+1}} I(x_i \\ge \\beta \\theta)$$"),
-        p("Introducing a latent Bernoulli variable \\(\\delta_i \\sim \\text{Bernoulli}(\\epsilon)\\) yields the scale-inflated form:"),
-        p("$$f(x_i | \\alpha, \\theta, \\beta, \\epsilon, \\delta_i) = \\frac{\\alpha (\\beta^{\\delta_i} \\theta)^\\alpha}{x_i^{\\alpha+1}} I(x_i \\ge \\beta^{\\delta_i} \\theta)$$"),
-        
-        hr(),
-        h4("2. Prior Distributions & Baseline Parameters", style = "color: #002855; font-weight:600;"),
-        tags$ul(
-          tags$li("\\(\\alpha \\sim \\text{Gamma}(a_1, a_2)\\) with shape \\(a_1\\) and rate \\(a_2\\)."),
-          tags$li("\\(\\theta\\) can either be specified as a fixed baseline threshold parameter or assigned a prior \\(\\theta \\sim \\text{Gamma}(t_1, t_2)\\)."),
-          tags$li("\\(\\epsilon \\sim \\text{Beta}(b_1, b_2)\\). Hyperparameters \\(b_1=0.1842, b_2=3.5\\) reflect a 5% expected prior outlier rate (Verdinelli & Wasserman, 1991)."),
-          tags$li("\\(\\beta \\sim \\text{Shifted Exp}(\\lambda, \\beta^*)\\) with density \\(f(\\beta) = \\lambda e^{-\\lambda(\\beta - \\beta^*)}\\) for \\(\\beta \\ge \\beta^* \\ge 1\\).")
-        ),
-        
-        hr(),
-        h4("3. Full Conditional Posteriors for Gibbs Sampling", style = "color: #002855; font-weight:600;"),
-        tags$ul(
-          tags$li(strong("Alpha: "), "\\(\\alpha | \\text{rest} \\sim \\text{Gamma}\\left(a_1 + n, a_2 + \\sum \\ln(x_i) - n \\ln(\\theta) - k \\ln(\\beta)\\right)\\), where \\(k = \\sum \\delta_i\\)."),
-          tags$li(strong("Theta (If Variable): "), "Sampled on the log-scale using \\(\\text{Truncated Gamma}(t_1 + n\\alpha, t_2)\\) bounded above by \\(\\theta_{\\text{ub}} = \\min\\left(\\{x_i : \\delta_i=0\\} \\cup \\left\\{\\frac{x_i}{\\beta} : \\delta_i=1\\right\\}\\right)\\)."),
-          tags$li(strong("Epsilon: "), "\\(\\epsilon | \\text{rest} \\sim \\text{Beta}(b_1 + k, b_2 + n - k)\\)."),
-          tags$li(strong("Latent Indicator (\\(\\delta_i\\)): "), 
-                  "For \\(x_i \\ge \\beta \\theta\\), \\(P_{\\text{post}}(\\delta_i = 1) = \\frac{\\beta^\\alpha \\epsilon}{1 - \\epsilon + \\beta^\\alpha \\epsilon}\\). For \\(x_i < \\beta \\theta\\), \\(P(\\delta_i = 1) = 0\\)."),
-          tags$li(strong("Beta: "), 
-                  "If \\(k > 0\\), \\(\\beta | \\text{rest} \\sim \\text{Truncated Gamma}(\\alpha k + 1, \\lambda)\\) bounded in \\(\\left[\\beta^*, \\min_{i: \\delta_i=1} \\left(\\frac{x_i}{\\theta}\\right)\\right]\\).")
-        ),
-        
-        hr(),
-        h4("4. Rao-Blackwellized Density Estimators", style = "color: #002855; font-weight:600;"),
-        p("Rao-Blackwellization reduces sampling variance by conditioning on the remaining latent MCMC draws. The posterior densities for \\(\\alpha\\) and \\(\\theta\\) are computed via average conditional expectations:"),
-        tags$ul(
-          tags$li(strong("Rao-Blackwellized Alpha Density: "),
-                  "$$\\hat{f}_{\\text{RB}}(\\alpha) = \\frac{1}{R}\\sum_{r=1}^R \\text{Gamma}\\left(\\alpha; a_1 + n, a_2 + \\sum \\ln(x_i) - n\\ln(\\theta^{(r)}) - k^{(r)}\\ln(\\beta^{(r)})\\right)$$"),
-          tags$li(strong("Rao-Blackwellized Theta Density: "),
-                  "$$\\hat{f}_{\\text{RB}}(\\theta) = \\frac{1}{R}\\sum_{r=1}^R \\frac{\\text{Gamma}(\\theta; t_1 + n\\alpha^{(r)}, t_2)}{F_{\\text{Gamma}}(\\theta_{\\text{ub}}^{(r)}; t_1 + n\\alpha^{(r)}, t_2)} I\\left(0 < \\theta \\le \\theta_{\\text{ub}}^{(r)}\\right)$$",
-                  "where \\(\\theta_{\\text{ub}}^{(r)} = \\min_i \\left(\\frac{x_i}{(\\beta^{(r)})^{\\delta_i^{(r)}}}\\right)\\).")
-        ),
-        
-        hr(),
-        h4("5. Monte Carlo Expectation-Maximization (MCEM)", style = "color: #002855; font-weight:600;"),
-        p("When prior parameters are not known a priori, empirical Bayes estimation is conducted via the MCEM algorithm:"),
-        tags$ul(
-          tags$li(strong("E-Step: "), "Samples are generated using the Gibbs sampler based on current prior hyperparameter estimates."),
-          tags$li(strong("M-Step: "), "Prior hyperparameters \\((a_1, a_2, \\beta^*, \\lambda, b_1, b_2, t_1, t_2)\\) are updated by matching sample moments or via maximum marginal likelihood updates until convergence (diff < tol).")
-        ),
-        
-        hr(),
-        h4("6. References", style = "color: #002855; font-weight:600;"),
-        p("1. Scollnik, D. P. (2015). A pareto scale-inflated outlier model and its bayesian analysis. ", em("Scandinavian Actuarial Journal"), ", 2015(3), 201-220."),
-        p("2. Verdinelli, I., & Wasserman, L. (1991). Bayesian analysis of outlier problems using the gibbs sampler. ", em("Statistics and Computing"), ", 1(2), 105-117."),
-        p("3. Casella, G., & George, E. I. (1992). Explaining the Gibbs sampler. ", em("The American Statistician"), ", 46(3), 167-174."),
-        p("4. Gelfand, A. E., & Smith, A. F. (1990). Sampling-based approaches to calculating marginal densities. ", em("Journal of the American Statistical Association"), ", 85(410), 398-409.")
+    withMathJax(),
+    
+    layout_columns(
+      col_widths = c(6, 6, 12),
+      
+      # CARD 1: MODEL SPECIFICATION
+      card(
+        card_header(class = "bg-primary text-white", h6(icon("square-root-variable"), " 1. Scale-Inflated Pareto Mixture", style = "margin:0;")),
+        card_body(
+          style = "font-size: 0.9rem;",
+          p("The model separates bulk observations from extreme scale-inflated contamination via a two-component mixture:"),
+          p("$$f(x_i | \\alpha, \\theta, \\beta, \\epsilon) = (1 - \\epsilon) \\frac{\\alpha \\theta^\\alpha}{x_i^{\\alpha+1}} I(x_i \\ge \\theta) + \\epsilon \\frac{\\alpha (\\beta \\theta)^\\alpha}{x_i^{\\alpha+1}} I(x_i \\ge \\beta \\theta)$$"),
+          p("Introducing a latent Bernoulli outlier indicator \\(\\delta_i \\sim \\text{Bernoulli}(\\epsilon)\\) yields the compact scale-inflated form:"),
+          p("$$f(x_i | \\alpha, \\theta, \\beta, \\epsilon, \\delta_i) = \\frac{\\alpha (\\beta^{\\delta_i} \\theta)^\\alpha}{x_i^{\\alpha+1}} I\\left(x_i \\ge \\beta^{\\delta_i} \\theta\\right)$$")
+        )
+      ),
+      
+      # CARD 2: PRIORS & GIBBS SAMPLER (MATCHING SECTIONS 2.1 & 2.2)
+      card(
+        card_header(class = "bg-primary text-white", h6(icon("diagram-project"), " 2. Priors & Full Conditional Posteriors", style = "margin:0;")),
+        card_body(
+          style = "padding: 10px; font-size: 0.85rem;",
+          tags$table(
+            class = "table table-sm table-striped align-middle",
+            style = "margin-bottom: 0;",
+            tags$thead(
+              class = "table-light",
+              tags$tr(
+                tags$th(style = "width: 22%; font-weight: 600;", "Parameter"),
+                tags$th(style = "width: 33%; font-weight: 600;", "Prior Distribution"),
+                tags$th(style = "width: 45%; font-weight: 600;", "Full Conditional Posterior")
+              )
+            ),
+            tags$tbody(
+              tags$tr(
+                tags$td(strong("Shape (\\(\\alpha\\))")),
+                tags$td("\\(\\alpha \\sim \\text{Gamma}(a_1, a_2)\\)"),
+                tags$td("\\(\\text{Gamma}\\left(a_1 + n, a_2 + \\sum_{i=1}^n \\ln x_i - n \\ln \\theta - k \\ln \\beta\\right)\\)")
+              ),
+              tags$tr(
+                tags$td(strong("Threshold (\\(\\theta\\))")),
+                tags$td("\\(\\theta \\sim \\text{Gamma}(t_1, t_2)\\)"),
+                tags$td("Truncated \\(\\text{Gamma}(t_1 + \\alpha n, t_2)\\) on \\(0 \\le \\theta \\le \\min_i \\left(\\frac{x_i}{\\beta^{\\delta_i}}\\right)\\)")
+              ),
+              tags$tr(
+                tags$td(strong("Contamination (\\(\\epsilon\\))")),
+                tags$td("\\(\\epsilon \\sim \\text{Beta}(b_1, b_2)\\)"),
+                tags$td("\\(\\text{Beta}(b_1 + k, b_2 + n - k)\\)")
+              ),
+              tags$tr(
+                tags$td(strong("Inflation (\\(\\beta\\))")),
+                tags$td("\\(\\beta \\sim \\text{Shifted-Exp}(\\beta^*, \\lambda)\\)"),
+                tags$td("Truncated \\(\\text{Gamma}(\\alpha k + 1, \\lambda)\\) on \\(\\beta^* \\le \\beta \\le \\min_{i: \\delta_i=1}\\left(\\frac{x_i}{\\theta}\\right)\\)")
+              ),
+              tags$tr(
+                tags$td(strong("Indicator (\\(\\delta_i\\))")),
+                tags$td("\\(\\delta_i | \\epsilon \\sim \\text{Bernoulli}(\\epsilon)\\)"),
+                tags$td("\\(P(\\delta_i = 1) = \\frac{\\beta^\\alpha \\epsilon}{1 - \\epsilon + \\beta^\\alpha \\epsilon}\\) for \\(x_i \\ge \\beta \\theta\\); \\(0\\) for \\(\\theta \\le x_i < \\beta \\theta\\)")
+              )
+            )
+          )
+        )
+      ),
+      
+      # CARD 3: EMPIRICAL BAYES & DENSITY ESTIMATION (BOTTOM FULL-WIDTH)
+      card(
+        card_header(class = "bg-primary text-white", h6(icon("gears"), " 3. Empirical Bayes (MCEM) & Diagnostics", style = "margin:0;")),
+        card_body(
+          style = "font-size: 0.88rem;",
+          p(strong("Monte Carlo Expectation-Maximisation (MCEM):")),
+          p("When prior parameters are unknown, Empirical Bayes tuning alternates between an ", strong("E-step"), " (sampling via Gibbs draws) and an ", strong("M-step"), " (updating hyperparameters \\(a_1, a_2, b^*, \\lambda, b_1, b_2, t_1, t_2\\) until convergence)."),
+          hr(style = "margin: 8px 0;"),
+          p(strong("Rao-Blackwellised Density Estimator:")),
+          p("Reduces sampling variance by averaging conditional posterior distributions over MCMC draws \\(R\\):"),
+          p("$$\\hat{f}_{\\text{RB}}(\\alpha) = \\frac{1}{R}\\sum_{r=1}^R \\text{Gamma}\\left(\\alpha; a_1 + n, a_2 + \\sum \\ln x_i - n\\ln \\theta^{(r)} - k^{(r)}\\ln \\beta^{(r)}\\right)$$")
+        )
       )
     )
   )
@@ -616,11 +691,11 @@ server <- function(input, output, session) {
   # SERVER LOGIC - APP 1
   # --------------------------------------------------------------------------
   
-  # Reactive storage for active dataset (App 1)
-  active_dataset <- reactiveVal(c(110, 125, 140, 105, 118, 132, 108, 155, 120, 115, 130, 145, 112, 128, 138, 122, 380, 410, 450, 490))
+  # Reactive storage for active dataset initialized with Norwegian Oil dataset
+  active_dataset <- reactiveVal(norwegian_oil_data)
   sim_seed <- reactiveVal(123)
   
-  # Observe simulation generation
+  # Observe simulation generation or dataset selection
   observeEvent(c(input$gen_sim, input$data_source), {
     if (input$data_source == "simulated") {
       set.seed(sim_seed())
@@ -633,6 +708,8 @@ server <- function(input, output, session) {
       sim_val <- rpareto_custom(n, alpha_val, theta_val)
       inflated_sim_val <- scale_inflated_rpareto(m, alpha_val, theta_val, beta_val)
       active_dataset(round(c(sim_val, inflated_sim_val), 2))
+    } else if (input$data_source == "norwegian") {
+      active_dataset(norwegian_oil_data)
     }
   }, ignoreInit = FALSE)
   
@@ -1251,7 +1328,6 @@ server <- function(input, output, session) {
          xlab = "Observation Value", ylab = "Posterior Outlier Probability P(δ_i = 1)",
          main = "", frame.plot = TRUE)
     points(res$comp_sim_val[ord], post_outlier_probs[ord], pch = 19, col = "#002855", cex = 0.8)
-    # abline(h = 0.5, lty = 2, col = "#e63946")
   })
   
   # --------------------------------------------------------------------------
@@ -1293,11 +1369,15 @@ server <- function(input, output, session) {
           extraDistr::rpareto(n = round(n * epsilon), a = alpha, b = beta * theta)
         )
         true_parms <- c(alpha = alpha, beta = beta, epsilon = epsilon, theta = theta)
+      } else if (input$app2_data_source == "Norwegian Oil Dataset") {
+        x <- norwegian_oil_data
+        true_parms <- NULL
       } else {
         df <- app2_uploaded_df()
         req(df, input$app2_selected_col)
         x <- as.numeric(df[[input$app2_selected_col]])
         x <- x[!is.na(x)]
+        true_parms <- NULL
       }
       
       incProgress(0.3, detail = "Running MCEM Gibbs Sampler...")
@@ -1429,7 +1509,7 @@ server <- function(input, output, session) {
       check.names = FALSE
     )
     
-    if (!is.null(res$true_parms)) {              df_summary$`Ground Truth` <- res$true_parms
+    if (!is.null(res$true_parms)) { df_summary$`Ground Truth` <- res$true_parms
     }
     
     df_summary
